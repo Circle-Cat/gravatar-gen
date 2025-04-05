@@ -32,9 +32,16 @@ func gravatarMD5(email string) string {
 	return hex.EncodeToString(hasher[:])
 }
 
+// https://gerrit.googlesource.com/plugins/avatars-gravatar/+/b687eb0b55d464fea200b88059db1c393a1ad1ae/src/main/java/com/googlesource/gerrit/plugins/avatars/gravatar/GravatarAvatarProvider.java#101
+func gravatarMD5JPG(email string) string {
+	hasher := md5.Sum([]byte(strings.TrimSpace(email)))
+	return hex.EncodeToString(hasher[:]) + ".jpg"
+}
+
 var gravatarHashes = []func(string) string{
 	gravatarSHA256,
 	gravatarMD5,
+	gravatarMD5JPG,
 }
 
 func main() {
