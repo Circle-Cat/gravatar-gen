@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
 	"log"
@@ -20,9 +21,20 @@ var suffixes = []string{
 }
 
 // https://docs.gravatar.com/api/avatars/go/
-func gravatarHash(email string) string {
+func gravatarSHA256(email string) string {
 	hasher := sha256.Sum256([]byte(strings.TrimSpace(email)))
 	return hex.EncodeToString(hasher[:])
+}
+
+// https://github.com/Automattic/go-gravatar/blob/master/gravatar.go
+func gravatarMD5(email string) string {
+	hasher := md5.Sum([]byte(strings.TrimSpace(email)))
+	return hex.EncodeToString(hasher[:])
+}
+
+var gravatarHashes = []func(string) string{
+	gravatarSHA256,
+	gravatarMD5,
 }
 
 func main() {
@@ -42,7 +54,7 @@ func main() {
 			continue
 		}
 
-		targets := make([]string, 0, len(suffixes))
+		targets := make([]string, 0, len(suffixes)*len(gravatarHashes))
 		if file.Name() == "404.html" {
 			targets = append(targets, file.Name())
 		} else {
@@ -50,9 +62,11 @@ func main() {
 
 			for _, suffix := range suffixes {
 				email := name + suffix
-				hash := gravatarHash(email)
-				log.Printf("%q translated to %q", email, hash)
-				targets = append(targets, hash)
+				for _, gravatarHash := range gravatarHashes {
+					hash := gravatarHash(email)
+					log.Printf("%q translated to %q", email, hash)
+					targets = append(targets, hash)
+				}
 			}
 		}
 
