@@ -15,12 +15,13 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 
-	"github.com/nfnt/resize"
+	"golang.org/x/image/draw"
 )
 
 const (
 	avatarDir   = "avatar"
 	gravatarDir = "gravatar"
+	size        = 256
 )
 
 var suffixes = []string{
@@ -96,10 +97,23 @@ func main() {
 			log.Printf("Decoding %q: %v", file.Name(), err)
 		} else {
 			log.Printf("%q decoded as %q", file.Name(), format)
-			img = resize.Thumbnail(256, 256, img, resize.Lanczos3)
+			rect := image.Rect(0, 0, size, size)
+			canvas := image.NewRGBA(rect)
+			dx := float64(img.Bounds().Dx())
+			dy := float64(img.Bounds().Dy())
+			if dx < dy {
+				offset := size/2 - int(float64(size/2)*dx/dy)
+				rect.Min.X = offset
+				rect.Max.X -= offset
+			} else {
+				offset := size/2 - int(float64(size/2)*dy/dx)
+				rect.Min.Y = offset
+				rect.Max.Y -= offset
+			}
+			draw.CatmullRom.Scale(canvas, rect, img, img.Bounds(), draw.Over, nil)
 
 			var b bytes.Buffer
-			err := png.Encode(&b, img)
+			err := png.Encode(&b, canvas)
 			if err != nil {
 				log.Printf("Encoding %q: %v", file.Name(), err)
 			} else {
