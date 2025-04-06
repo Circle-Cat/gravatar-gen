@@ -61,11 +61,12 @@ func main() {
 			continue
 		}
 
-		targets := make([]string, 0, len(suffixes)*len(gravatarHashes))
+		targets := make([]string, 0, len(suffixes)*len(gravatarHashes)+1)
 		if file.Name() == "404.html" {
 			targets = append(targets, file.Name())
 		} else {
 			name := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+			targets = append(targets, name+".png")
 
 			for _, suffix := range suffixes {
 				email := name + suffix
