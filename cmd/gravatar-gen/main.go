@@ -1,13 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"image"
+	"image/png"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	_ "image/gif"
+	_ "image/jpeg"
+
+	"github.com/nfnt/resize"
 )
 
 const (
@@ -83,12 +91,28 @@ func main() {
 			log.Fatal(err)
 		}
 
+		img, format, err := image.Decode(bytes.NewReader(avatar))
+		if err != nil {
+			log.Printf("Decoding %q: %v", file.Name(), err)
+		} else {
+			log.Printf("%q decoded as %q", file.Name(), format)
+			img = resize.Thumbnail(256, 256, img, resize.Lanczos3)
+
+			var b bytes.Buffer
+			err := png.Encode(&b, img)
+			if err != nil {
+				log.Printf("Encoding %q: %v", file.Name(), err)
+			} else {
+				avatar = b.Bytes()
+			}
+		}
+
 		for _, target := range targets {
 			err := os.WriteFile(filepath.Join(gravatarDir, target), avatar, 0o644)
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Printf("%q copied to %q", file.Name(), target)
+			log.Printf("%q transformed to %q", file.Name(), target)
 		}
 	}
 }
